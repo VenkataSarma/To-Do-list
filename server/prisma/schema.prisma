@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  passwordHash   String
+  name           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  tasks          Task[]
+  categories     Category[]
+  activityLogs   ActivityLog[]
+  settings       ApplicationSettings?
+  teamsCreated   Team[]    @relation("TeamsCreated")
+  teamMemberships TeamMember[]
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tasks     Task[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Team {
+  id          Int          @id @default(autoincrement())
+  name        String
+  createdById Int
+  createdBy   User         @relation("TeamsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  members     TeamMember[]
+  tasks       Task[]
+
+  @@index([createdById])
+}
+
+model TeamMember {
+  id        Int      @id @default(autoincrement())
+  teamId    Int
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("member") // host, member
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([userId])
+}
+
+model Task {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId            Int?
+  team              Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
+  categoryId        Int?
+  category          Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  priority          String    @default("Medium") // Low, Medium, High, Critical
+  status            String    @default("Pending") // Pending, In Progress, Completed
+  startDate         DateTime?
+  scheduledDate     DateTime?
+  startTime         String?
+  endTime           String?
+  estimatedDuration Int?
+  deadline          DateTime?
+  progress          Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+  activityLogs      ActivityLog[]
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([priority])
+  @@index([deadline])
+  @@index([scheduledDate])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId            Int?
+  task              Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  taskTitleSnapshot String
+  actionType        String
+  previousValue     String?
+  newValue          String?
+  timestamp         DateTime @default(now())
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([timestamp])
+  @@index([actionType])
+}
+
+model ApplicationSettings {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme       String   @default("light")
+  preferences String   @default("{}")
+  updatedAt   DateTime @updatedAt
+}

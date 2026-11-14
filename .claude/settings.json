@@ -1,0 +1,7 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://localhost:20128/v1",
+    "ANTHROPIC_AUTH_TOKEN": "sk-075e496f7def1419-1ea825-7c23f73d",
+    "ANTHROPIC_MODEL": "nvidia/nvidia/nemotron-3-ultra-550b-a55b"
+  }
+}
